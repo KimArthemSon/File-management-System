@@ -1,0 +1,5 @@
+"* text=auto" 
+# Ensure line endings are consistent for all text files
+*.ts text eol=lf
+*.js text eol=lf
+*.d.ts text eol=lf
