@@ -22,6 +22,7 @@ export function Login({ togle }) {
           email: e.target.email.value + "",
           pass: e.target.password.value + "",
         }),
+        credentials: "include"
       });
 
       if (!result.ok) {
@@ -63,7 +64,7 @@ export function Login({ togle }) {
 function Error(message) {
   return (
     <div className="p-[5px] w-[400px] h-[40px] text-[14px] rounded-[10px] mt-[20px] border border-red-500">
-      <h2 className="flex items-center justify-center h-[100%] text-[16px]">{message.error}</h2>
+      <h2 className="flex items-center justify-center h-[100%] text-[16px] text-[red]">{message.error}</h2>
     </div>
   );
 }

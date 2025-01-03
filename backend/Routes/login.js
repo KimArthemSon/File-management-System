@@ -17,11 +17,13 @@ router.post('/', async (req, res) => {
     if(pass !== user_info[0][0].password){
         return res.status(401).json({ error: 'Incorrect password' });
     }
+
     console.log(user_info);
     req.session.user_id = user_info[0][0].user_id;
     req.session.user_type = user_info[0][0].user_type;
     req.session.email = email;
-    res.status(201).json({success: "Successfuly Login"});
+    
+    return res.status(201).json({success: "Successfuly Login"});
 });
 
 
@@ -29,11 +31,10 @@ router.get('/logout', (req, res)=>{
    req.session.destroy(err =>{
     if(err){
         console.log("somethig wrong logout");
-        res.json({err: "somethig wrong logout"});
-        return;
+       return res.json({err: "somethig wrong logout"});
     }
     console.log("success logout");
-    res.json({sucess: "success logout"});
+    return res.json({sucess: "success logout"});
    })
 })
 

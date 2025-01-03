@@ -5,7 +5,7 @@ import moment from "moment";
 const router = express.Router();
 //check age for future update
 
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   let { email, pass, con_pass, user_type } = req.body;
 
   if (!email || !pass || !con_pass || !user_type) {

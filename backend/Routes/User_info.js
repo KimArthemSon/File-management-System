@@ -13,92 +13,169 @@ router.get("/", async (req, res) => {
       age: "",
       birthday: "",
       contacts: "",
+      user_type: "personal",
     };
   } else {
     data = {
       email: "",
       company_name: "",
       contacts: "",
+      user_type: "company",
     };
   }
 
-  if (has_user_info(req)) {
-    try {
+  try {
+    const result = await has_user_info(req, res);
+
+    if (result[0][0]) {
       if (req.session.user_type === "personal") {
         const information = await db.promise().query(
           `select p.* from personal_info as p join 
            user_status as u on p.person_info_id = u.person_info_id
            where u.user_id = ?`,
-          req.session.user_id
+          [req.session.user_id]
         );
+
+        // console.log(information);
         data.email = req.session.email;
         data.first_name = information[0][0].first_name;
         data.last_name = information[0][0].last_name;
         data.age = information[0][0].age;
         data.birthday = information[0][0].birthday;
         data.contacts = information[0][0].contact_info;
+        // console.log(data);
+        return res.status(201).json(data);
       } else {
         const information = await db.promise().query(
           `select c.* from company_info as c join 
             user_status as u on c.company_info_id = c.company_info_id
             where u.user_id = ?`,
-          req.session.user_id
+          [req.session.user_id]
         );
+
+        //console.log(information);
         data.email = req.session.email;
         data.company_name = information[0][0].company_name;
         data.contacts = information[0][0].contact_info;
-        console.log(information);
-      }
 
-      return res.status(201).json(data);
-    } catch (e) {
-      return res
-        .status(500)
-        .json({ error: "Server error, please try again later" });
+        return res.status(201).json(data);
+      }
+    } else {
+      return res.status(400).json({ error: "User not found" });
     }
-  } else {
-    return res.status(201).json(data);
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ error: "Server error, please try again later" });
   }
 });
 
-
-router.post('/update', async(req, res) =>{
+router.post("/update", async (req, res) => {
   let data = {};
   if (req.session.user_type === "personal") {
+    const { email, first_name, last_name, age, birthday, contacts } = req.body;
     data = {
-      email: "",
-      first_name: "",
-      last_name: "",
-      age: "",
-      birthday: "",
-      contacts: "",
+      email: email,
+      first_name: first_name,
+      last_name: last_name,
+      age: age,
+      birthday: birthday,
+      contacts: contacts,
     };
   } else {
+    const { email, company_name, contacts } = req.body;
     data = {
-      email: "",
-      company_name: "",
-      contacts: "",
+      email: email,
+      company_name: company_name,
+      contacts: contacts,
     };
   }
-  
-  if (has_user_info(req)) {
 
-  }else{
+  try {
+    if (await has_user_info(req, res)) {
+      if (req.session.user_type === "personal") {
+        await db.promise().query(
+          `update personal_info as p join user_status as u on p.person_info_id = u.person_info_id
+          set p.first_name = ?, p.last_name = ?, p.age = ?, p.contact_info = ?
+          where u.user_id = ?`,
+          [
+            data.first_name,
+            data.last_name,
+            data.age,
+            data.contacts,
+            req.session.user_id,
+          ]
+        );
+      } else {
+        await db.promise().query(
+          `update company_info as c join user_status as u on c.company_info_id = u.company_info_id
+        set c.company_name = ?, c.contact_info = ?
+        where u.user_id = ?`,
+          [data.company_name, data.contacts, req.session.user_id]
+        );
+      }
+    } else {
+      if (req.session.user_type === "personal") {
+        await db
+          .promise()
+          .query(
+            `insert into personal_info(first_name,last_name,age,birthday,contact_info) values(?,?,?,?,?)`,
+            [
+              data.first_name,
+              data.last_name,
+              data.age,
+              data.birthday,
+              data.contacts,
+            ]
+          );
 
+        const [rows] = await db
+          .promise()
+          .query(`select LAST_INSERT_ID() from personal_info`);
+
+        await db
+          .promise()
+          .query(
+            `update user_status set person_info_id = ? where user_id = ?`,
+            [rows[0]["LAST_INSERT_ID()"], req.session.user_id]
+          );
+      } else {
+        await db
+          .promise()
+          .query(
+            `insert into company_info(company_name,contact_info) values(?,?)`,
+            [data.company_name, data.contacts]
+          );
+
+        const [rows] = await db.promise().query(`select LAST_INSERT_ID()`);
+
+        await db
+          .promise()
+          .query(
+            `update user_status set company_info_id = ? where user_id = ?`,
+            [rows[0]["LAST_INSERT_ID()"], req.session.user_id]
+          );
+      }
+    }
+
+    return res.status(201).json({ success: "Successfuly updated" });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ error: "Server error, please try again later" });
   }
-
 });
 
-
-async function has_user_info(req) {
+async function has_user_info(req, res) {
   try {
-    const has_user_info = await db
+    const has_userInfo = await db
       .promise()
       .query(
-        `select * from user_status where user_id = ?`,
-        req.session.user_id
+        `select * from user_status where user_id = ? and person_info_id is not null or company_info_id is not null and user_id = ?`,
+        [Number(req.session.user_id), Number(req.session.user_id)]
       );
-    return has_user_info;
+
+    return has_userInfo;
   } catch (e) {
     return res
       .status(500)
