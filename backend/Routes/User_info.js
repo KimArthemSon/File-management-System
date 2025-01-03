@@ -37,9 +37,7 @@ router.get("/", async (req, res) => {
         data.age = information[0][0].age;
         data.birthday = information[0][0].birthday;
         data.contacts = information[0][0].contact_info;
-
       } else {
-
         const information = await db.promise().query(
           `select c.* from company_info as c join 
             user_status as u on c.company_info_id = c.company_info_id
@@ -61,8 +59,36 @@ router.get("/", async (req, res) => {
   } else {
     return res.status(201).json(data);
   }
-  res.status(201).json(req.session.user_id);
 });
+
+
+router.post('/update', async(req, res) =>{
+  let data = {};
+  if (req.session.user_type === "personal") {
+    data = {
+      email: "",
+      first_name: "",
+      last_name: "",
+      age: "",
+      birthday: "",
+      contacts: "",
+    };
+  } else {
+    data = {
+      email: "",
+      company_name: "",
+      contacts: "",
+    };
+  }
+  
+  if (has_user_info(req)) {
+
+  }else{
+
+  }
+
+});
+
 
 async function has_user_info(req) {
   try {
