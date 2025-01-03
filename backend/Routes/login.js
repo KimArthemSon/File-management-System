@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
         return res.status(401).json({ error: 'Incorrect password' });
     }
 
-    console.log(user_info);
+    
     req.session.user_id = user_info[0][0].user_id;
     req.session.user_type = user_info[0][0].user_type;
     req.session.email = email;

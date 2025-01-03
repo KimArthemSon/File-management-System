@@ -46,9 +46,12 @@ router.get("/", async (req, res) => {
         // console.log(data);
         return res.status(201).json(data);
       } else {
+
+        console.log(req.session.user_id)
+
         const information = await db.promise().query(
           `select c.* from company_info as c join 
-            user_status as u on c.company_info_id = c.company_info_id
+            user_status as u on u.company_info_id = c.company_info_id
             where u.user_id = ?`,
           [req.session.user_id]
         );
@@ -60,6 +63,7 @@ router.get("/", async (req, res) => {
 
         return res.status(201).json(data);
       }
+
     } else {
       return res.status(400).json({ error: "User not found" });
     }
@@ -70,7 +74,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/update", async (req, res) => {
+router.put("/update", async (req, res) => {
   let data = {};
   if (req.session.user_type === "personal") {
     const { email, first_name, last_name, age, birthday, contacts } = req.body;
@@ -92,7 +96,10 @@ router.post("/update", async (req, res) => {
   }
 
   try {
-    if (await has_user_info(req, res)) {
+
+    const result = await has_user_info(req, res);
+
+    if (result[0][0]) {
       if (req.session.user_type === "personal") {
         await db.promise().query(
           `update personal_info as p join user_status as u on p.person_info_id = u.person_info_id
@@ -113,6 +120,7 @@ router.post("/update", async (req, res) => {
         where u.user_id = ?`,
           [data.company_name, data.contacts, req.session.user_id]
         );
+        
       }
     } else {
       if (req.session.user_type === "personal") {

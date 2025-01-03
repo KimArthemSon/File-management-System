@@ -2,7 +2,17 @@ import { useNavigate } from "react-router-dom";
 import profileicon from "../assets/profileicon.png";
 import { useState } from "react";
 export function Home() {
-  
+  async function Logout(){
+    try{
+      const res = await fetch('http://localhost:5000/login/logout', {
+        method: "GET",
+        credentials: "include"
+      })
+    }catch(e){
+      console.log("Logout succesfuly");
+    }
+    navigate("/");
+  }
   let navigate = useNavigate();
   let [toggle, setToggle] = useState(true);
   return (
@@ -18,7 +28,7 @@ export function Home() {
       {toggle? 
       <div className="flex flex-col items-center absolute right-[60px] mt-[65px] top-[37px] border-[1px] border-black ">
         <button  onClick={()=>navigate("/userInfo")} className="border-[1px] border-black w-full p-[10px] font-bold hover:bg-slate-600 hover:text-[white]">Profile</button>
-        <button  onClick={()=>navigate("/")} className="border-[1px] border-black w-full p-[10px] font-bold hover:bg-slate-600 hover:text-[white]">Logout</button>
+        <button  onClick={Logout} className="border-[1px] border-black w-full p-[10px] font-bold hover:bg-slate-600 hover:text-[white]">Logout</button>
       </div> : <div></div>
       }
   </div>

@@ -6,37 +6,106 @@ import Company from "../components/Company";
 
 export default function User_info() {
   let [toggle, setToggle] = useState(true);
+  let [info, setInfo] = useState({});
+  let [loading, setLoading] = useState(true);
+  let [error, setError] = useState(null);
   let navigate = useNavigate();
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
-    console.log("hello");
+    let data = {};
+    if (info.user_type === "personal") {
+      data = {
+        email: e.target.email.value,
+        first_name:e.target.first_name.value,
+        last_name:e.target.last_name.value,
+        age:e.target.age.value,
+        birthday:e.target.birthday.value,
+        contacts:e.target.contacts.value,
+      };
+    
+    } else {
+      data = {
+        email:e.target.email.value,
+        company_name:e.target.company_name.value,
+        contacts:e.target.contacts.value,
+      };
+    }
+
+  console.log(data);
+    try {
+      const res = await fetch("http://localhost:5000/user_info/update", {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+   
+      if (!res.ok) {
+        setError("Failed to fetch data.");
+        setLoading(false);
+        return;
+      }
+
+    console.log((await res.json()).success);
+
+      fetchData();
+    } catch (e) {
+      setError("Error fetching data.");
+      setLoading(false);
+    }
+    return;
   }
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/user_info/",{
-          method: "GET",
-          credentials: "include"
-        });
+  const fetchData = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/user_info/", {
+        method: "GET",
+        credentials: "include",
+      });
 
-        if (!res.ok) {
-          console.error("Failed to fetch data");
-          return;
-        }
-
-        const data = await res.json();
-        console.log(data);
-
-        setToggle(data.user_type === "personal");
-      } catch (e) {
-        console.error("Error fetching data:", e);
+      if (!res.ok) {
+        setError("Failed to fetch data.");
+        setLoading(false);
+        return;
       }
-    };
 
+      let data = await res.json();
+      if (data.user_type === "personal") {
+        data.birthday = (data.birthday + "").substring(0, 10);
+      }
+
+      console.log(data);
+      setInfo(data);
+      setToggle(data.user_type === "personal");
+      setLoading(false);
+    } catch (e) {
+      setError("Error fetching data.");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-row justify-center items-center p-6 bg-gray-100 h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-row justify-center items-center p-6 bg-gray-100 h-screen">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-row justify-center items-center p-6 bg-gray-100 h-screen">
@@ -59,7 +128,11 @@ export default function User_info() {
           !toggle ? "mb-[170px]" : ""
         }`}
       >
-        {toggle ? <Personal submit={submit} /> : <Company submit={submit} />}
+        {toggle ? (
+          <Personal submit={submit} data={info} />
+        ) : (
+          <Company submit={submit} data={info} />
+        )}
       </div>
     </div>
   );

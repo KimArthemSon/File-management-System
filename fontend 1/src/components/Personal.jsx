@@ -1,11 +1,12 @@
 import { useState } from "react";
-export default function Personal({submit}) {
-    const [email, setEmail] = useState("paulvan@gmail.com");
-    const [firstName, setFirstName] = useState("Paul");
-    const [lastName, setLastName] = useState("Son");
-    const [age, setAge] = useState(20);
-    const [birthday, setBirthday] = useState("2001-05-31");
-    const [contact, setContact] = useState("09617498347");
+export default function Personal({submit, data}) {
+
+    const [email, setEmail] = useState(data.email);
+    const [firstName, setFirstName] = useState(data.first_name);
+    const [lastName, setLastName] = useState(data.last_name);
+    const [age, setAge] = useState(data.age);
+    const [birthday, setBirthday] = useState(data.birthday);
+    const [contact, setContact] = useState(data.contacts);
     
     return (
       <form action="" onSubmit={submit} className="flex flex-col">
@@ -82,7 +83,7 @@ export default function Personal({submit}) {
           </label>
           <input
             type="text"
-            name="contact"
+            name="contacts"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             className="input-field border-b-2 border-gray-400 pb-2 mb-4"

@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-export default function Company({submit}) {
-    const [companyEmail, setCompanyEmail] = useState("twitter@gmail.com");
-    const [companyName, setCompanyName] = useState("Paul");
-    const [companyContact, setCompanyContact] = useState("09617498347");
+export default function Company({submit, data}) {
+    const [companyEmail, setCompanyEmail] = useState(data.email);
+    const [companyName, setCompanyName] = useState(data.company_name);
+    const [companyContact, setCompanyContact] = useState(data.contacts);
   
     return (
       <form action="" onSubmit={submit} className="flex flex-col gap-4">
@@ -28,7 +28,7 @@ export default function Company({submit}) {
           </label>
           <input
             type="text"
-            name="name"
+            name="company_name"
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
             className="input-field border-b-2 border-gray-400 pb-2 mb-4"
@@ -41,7 +41,7 @@ export default function Company({submit}) {
           </label>
           <input
             type="text"
-            name="contact"
+            name="contacts"
             value={companyContact}
             onChange={(e) => setCompanyContact(e.target.value)}
             className="input-field border-b-2 border-gray-400 pb-2 mb-4"
