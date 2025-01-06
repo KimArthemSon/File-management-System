@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import Personal from "../components/Personal";
 import Company from "../components/Company";
 
+import { Navbar_menu } from "../components/Navbar-menu";
+
 export default function User_info() {
   let [toggle, setToggle] = useState(true);
   let [info, setInfo] = useState({});
@@ -109,18 +111,14 @@ export default function User_info() {
 
   return (
     <div className="flex flex-row justify-center items-center p-6 bg-gray-100 h-screen">
+      {<Navbar_menu email={info.email}/>}
       <div className="flex flex-col items-center mb-auto mr-10 mt-10">
         <img
           src={profileicon}
           className="w-24 h-24 rounded-full shadow-lg"
           alt="profile"
         />
-        <button
-          onClick={() => navigate("/home")}
-          className="mt-[10px] px-4 py-2 rounded-lg font-semibold bg-blue-500 text-white"
-        >
-          Home
-        </button>
+        
       </div>
 
       <div

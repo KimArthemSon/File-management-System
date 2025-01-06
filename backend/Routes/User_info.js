@@ -26,6 +26,10 @@ router.get("/", async (req, res) => {
 
   try {
     const result = await has_user_info(req, res);
+    if(result.status === 500){
+      
+      return res.status(500).json(result);
+    }
 
     if (result[0][0]) {
       if (req.session.user_type === "personal") {
@@ -185,9 +189,7 @@ async function has_user_info(req, res) {
 
     return has_userInfo;
   } catch (e) {
-    return res
-      .status(500)
-      .json({ error: "Server error, please try again later" });
+    return {status: 500, error: "Server error, please try again later"};
   }
 }
 

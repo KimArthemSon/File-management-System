@@ -28,7 +28,7 @@ router.put("/update/:id", async (req, res) => {
 
   const result = await validate(req, res, data);
 
-  if(result.valid){
+  if(!result.valid){
     return res.status(result.status).json(result);
   }
 
@@ -101,21 +101,24 @@ router.delete("/delete/:id", async (req, res) => {
 });
 
 async function getData(stmt, req, res, id) {
-  let queryData;
+  
   try {
-    queryData = await db.promise().query(stmt, [req.session.user_id, id]);
-
-    if (queryData.length === 0 && id === -1) {
+    
+    let queryData = await db.promise().query(stmt, [req.session.user_id, Number(id)]);
+        console.log(req.session.user_id, id)
+   
+    
+    if (!queryData[0][0] && id === -1) {
       return res
-        .status(200)
-        .json({ data: [], NoData: "No Folders have found" });
-    } else if (queryData.length === 0) {
-      return res.status(200).json({ data: [], NoData: "No files have found" });
+        .status(404)
+        .json({NoData: "No Folders have found" });
+    } else if (!queryData[0][0]) {
+      return res.status(404).json({ NoData: "No files have found",param: id });
     }
 
     queryData = queryData.slice(0, queryData.length - 1);
-
-    const finalData = { email: req.session.email, data: queryData };
+    
+    const finalData = { email: req.session.email, data: queryData,type: (id ===- 1 ? "folder": "file") };
 
     return res.status(201).json(finalData);
   } catch (e) {
@@ -142,10 +145,10 @@ async function updateData(req, res, data) {
     stmt = `UPDATE files
          SET 
          file_name = ?, 
-         file_path = CONCAT(SUBSTRING_INDEX(file_path, '/', 2), '/', ?, ?)
+         file_path = CONCAT(SUBSTRING_INDEX(file_path, '/', 2), '/', ?, '.txt')
          WHERE files_id = ?`;
 
-    values = [data.name, data.name, data.id];
+    values = [data.name, data.name,data.id];
 
   } else {
     return res.status(401).json({ Type: "The data type is not valid" });
@@ -164,7 +167,7 @@ async function deleteData(req, res, data) {
   if (!(data.type === "folder" || data.type === "file")) {
     return res.status(401).json({ Type: "The data type is not valid" });
   }
-
+   console.log(data);
   const stmt =
     data.type === "folder"
       ? `delete from folders where folder_id = ?`
@@ -186,20 +189,19 @@ async function validate(req, res, data) {
   }
 
   const stmt = data.type === "folder" ? `f.folder_id` : `fl.files_id`;
-
+   console.log("id: ",req.session.user_id, data.type, data.id);
   try {
 
     const result = await db.promise().query(
       `select * from user_status as u
         inner join folders as f on u.user_status_id = f.user_status_id
-        inner join files as fl on f.folder_id = fl.folder_id 
+        ${data.type === "file" ? `inner join files as fl on f.folder_id = fl.folder_id` : ``} 
         where u.user_id = ? and ${stmt} = ?`,
-      [req.session.user_id, data.id]
+      [req.session.user_id, Number(data.id)]
     );
     
-  
-   if((!result[0][0])){
-
+    console.log(result)
+   if(!result[0][0]){
     return { error: "Not data found", valid: false, status: 404}
    }
     
