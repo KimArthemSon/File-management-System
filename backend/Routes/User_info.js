@@ -26,8 +26,7 @@ router.get("/", async (req, res) => {
 
   try {
     const result = await has_user_info(req, res);
-    if(result.status === 500){
-      
+    if (result.status === 500) {
       return res.status(500).json(result);
     }
 
@@ -50,8 +49,7 @@ router.get("/", async (req, res) => {
         // console.log(data);
         return res.status(201).json(data);
       } else {
-
-        console.log(req.session.user_id)
+        console.log(req.session.user_id);
 
         const information = await db.promise().query(
           `select c.* from company_info as c join 
@@ -67,7 +65,6 @@ router.get("/", async (req, res) => {
 
         return res.status(201).json(data);
       }
-
     } else {
       return res.status(400).json({ error: "User not found" });
     }
@@ -100,7 +97,6 @@ router.put("/update", async (req, res) => {
   }
 
   try {
-
     const result = await has_user_info(req, res);
 
     if (result[0][0]) {
@@ -124,7 +120,6 @@ router.put("/update", async (req, res) => {
         where u.user_id = ?`,
           [data.company_name, data.contacts, req.session.user_id]
         );
-        
       }
     } else {
       if (req.session.user_type === "personal") {
@@ -189,7 +184,7 @@ async function has_user_info(req, res) {
 
     return has_userInfo;
   } catch (e) {
-    return {status: 500, error: "Server error, please try again later"};
+    return { status: 500, error: "Server error, please try again later" };
   }
 }
 

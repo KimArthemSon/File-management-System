@@ -1,22 +1,33 @@
 import { useState, useEffect } from "react";
 import { Navbar_menu } from "../components/Navbar-menu";
-import FolderIcon from "../assets/FolderIcon.png";
-import FileIcon from "../assets/FileIcon.png";
+import Folders from "../components/Folder&files.jsx";
 
 export function Home() {
-  let [edit, setEdit] = useState({id: -1, clicked: false, type: "nono", name: ""});
+  let [edit, setEdit] = useState({
+    id: -1,
+    clicked: false,
+    type: "nono",
+    name: "",
+  });
   let [loading, setLoading] = useState(true);
-  let [err, setErr] = useState(true);
+  let [haveData, setHaveData] = useState(true);
+  let [err, setErr] = useState(false);
+  let [errMessage, setErrMessage] = useState("");
   const [email, setEmail] = useState();
-  const [info, setInfo] = useState();
-  const [file, setFile] = useState(null);
-  
+  const [info, setInfo] = useState(null);
+  let [fileParentID, setfileParentID] = useState(null);
+  let [fileParentName, setFileParentName] = useState(null);
+  const [newFolder, setNewFolder] = useState(false);
+  const [wasFolder, setWasFolder] = useState(null);
 
   useEffect(() => {
     fetchFolder("folder", 2);
   }, []);
 
   async function fetchFolder(type, id) {
+    setLoading(true);
+    setHaveData(true);
+    setfileParentID(id);
     let url = "http://localhost:5000/home/folders";
 
     if (type === "file") {
@@ -29,15 +40,55 @@ export function Home() {
         credentials: "include",
       });
 
+      const data = await res.json();
+
+      console.log(data);
+      setHaveData(false);
+      setEmail(data.email);
+      setInfo(data);
+      console.log(type);
+      setWasFolder(type === "folder" ? true : false);
+      setLoading(false);
+    } catch (e) {
+      setHaveData(true);
+      timeOutErr(e);
+      console.log(e);
+    }
+  }
+
+  async function editUser(e) {
+    e.preventDefault();
+
+    const url = `http://localhost:5000/home/update/${edit.id}`;
+
+    try {
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify({
+          name: e.target.new_name.value,
+          type: edit.type,
+        }),
+        credentials: "include",
+      });
+
       if (!res.ok) {
         setLoading(false);
         console.log("error");
         return;
       }
+      setEdit({
+        id: edit.id,
+        clicked: false,
+        type: edit.type,
+        name: edit.name,
+      });
 
       const data = await res.json();
-      setEmail(data.email);
-      setInfo(data);
+
+      fetchFolder();
 
       setLoading(false);
     } catch (e) {
@@ -45,89 +96,91 @@ export function Home() {
       console.log(e);
     }
   }
-  async function editUser(e) {
-     e.preventDefault();
-    console.log(edit)
-    const url = `http://localhost:5000/home/update/${edit.id}`;
- 
-     try {
 
-       const res = await fetch(url, {
-         method: "PUT",
-         headers: {
-          "Content-type": "application/json"
-         },
-         body: JSON.stringify({
-          name: e.target.new_name.value,
-          type: edit.type
-         }),
-         credentials: "include"
-       });
- 
-       if (!res.ok) {
-         setLoading(false);
-         console.log("error");
-         return;
-       }
- 
-       const data = await res.json();
-       console.log(data);
-
-       fetchFolder();
-
-       setLoading(false);
-     } catch (e) {
-       setLoading(false);
-       console.log(e);
-     }
-     
-  }
-  
-  const handleFileChange = (event) => {
+  async function handleFileChange(event) {
     const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
+
+    if (!event.target.files[0]) {
+      return;
     }
-  };
+    console.log("hello: ", fileParentName);
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("name", fileParentName);
 
-  async function fileSubmit(e) {
-     e.preventDefault();
+    try {
+      const res = await fetch(
+        `http://localhost:5000/home/create/${fileParentID}`,
+        {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        }
+      );
 
-     const url = `http://localhost:5000/home/update/${edit.id}`;
-     
-     try {
+      if (!res.ok) {
+        console.log(res);
+        return;
+      }
+      fetchFolder("file", fileParentID);
+    } catch (e) {
+      console.log(e);
+    }
 
-       const res = await fetch(url, {
-         method: "PUT",
-         headers: {
-          "Content-type": "application/json"
-         },
-         body: JSON.stringify({
-          name: "folder",
-          type: edit.type
-         }),
-         credentials: "include"
-       });
- 
-       if (!res.ok) {
-         setLoading(false);
-         console.log("error");
-         return;
-       }
- 
-       const data = await res.json();
-       console.log(data);
-
-       fetchFolder();
-
-       setLoading(false);
-     } catch (e) {
-       setLoading(false);
-       console.log(e);
-     }
-     
+    console.log(selectedFile);
   }
 
+  function handleFileUpload() {
+    if (wasFolder) {
+      setNewFolder(true);
+      return;
+    } else {
+      const fileInput = document.getElementById("file-input");
+      fileInput.click();
+
+      return;
+    }
+  }
+
+  async function HandleFolder(e) {
+    e.preventDefault();
+
+    const name = e.target.folderName.value;
+    try {
+      const res = await fetch("http://localhost:5000/home/create", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name,
+        }),
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        timeOutErr(data.error);
+        return;
+      }
+
+      fetchFolder();
+    } catch (e) {
+      timeOutErr(e);
+    }
+  }
+
+  function timeOutErr(e) {
+    setLoading(false);
+    console.log(e);
+    setErr(true);
+    setErrMessage(e);
+    setTimeout(() => {
+      setErr(false);
+      setErrMessage("");
+    }, 500);
+  }
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-90">
@@ -142,19 +195,35 @@ export function Home() {
   return (
     <div className="flex items-center justify-center">
       {<Navbar_menu email={email} />}
-      {err ? <Error message={{error: "Invalid"}}/> : <div/>}
+      {err ? <Error message={errMessage} /> : <div />}
+      {newFolder ? (
+        <NewFolder HandleFolder={HandleFolder} setNewFolder={setNewFolder} />
+      ) : (
+        <div />
+      )}
 
       <div className=" w-[1370px]  mt-[90px] ml-auto p-[10px] pt-[4px] pr-[350px]">
         <div className="flex items-center h-[40px] mb-[40px]">
           {edit ? (
-            <form action="" className="w-full flex items-center" onSubmit={editUser} >
+            <form
+              action=""
+              className="w-full flex items-center"
+              onSubmit={editUser}
+            >
               <input
                 type="text"
                 placeholder="New name"
                 name="new_name"
                 className="flex-1 border-2 border-gray-300 rounded-lg p-1 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={edit.name}
-                onChange={(e) => setEdit({id: edit.id, clicked: edit.clicked, type: edit.type, name: e.target.value})}
+                onChange={(e) =>
+                  setEdit({
+                    id: edit.id,
+                    clicked: edit.clicked,
+                    type: edit.type,
+                    name: e.target.value,
+                  })
+                }
               />
               <button
                 type="submit"
@@ -173,39 +242,46 @@ export function Home() {
           ) : (
             <div />
           )}
-           
-      <form action="" className="flex items-center ml-auto" onSubmit={fileSubmit}>
-      <input
-        type="file"
-        style={{ display: "none" }}
-        onChange={handleFileChange}
-      />
-        <button className="px-2 py-1 ml-auto bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input
+            type="file"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+            id="file-input"
+          />
+          <button
+            className="px-2 py-1 ml-auto bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={handleFileUpload}
+          >
             ➕
           </button>
-          <button className="px-2 py-1 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ml-2" onClick={()=>fetchFolder("Folder", -1)}>
+          <button
+            className="px-2 py-1 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ml-2"
+            onClick={() => fetchFolder("folder", -1)}
+          >
             ⬅️
           </button>
-      </form>
         </div>
         <div className="flex flex-wrap content-start w-full h-[520px] overflow-y-auto gap-[20px]">
           <div className="flex flex-wrap content-start w-full h-[520px] overflow-y-auto gap-[20px]">
             <div className="flex flex-wrap content-start w-full h-[520px] overflow-y-auto gap-[20px]">
-              {info.data[0].map((e, i) => (
-                <Folders
-                  key={i}
-                  edit={edit}
-                  setEdit={setEdit}
-                  info={{
-                    name: info.type === "file" ? e.file_name : e.folder_name,
-                  }}
-                  infoSecond={info.type}
-
-                  infoThird={e}
-                  fetchFolder={fetchFolder}
-
-                />
-              ))}
+              {info.haveData ? (
+                <div />
+              ) : (
+                info.data[0].map((e, i) => (
+                  <Folders
+                    key={i}
+                    edit={edit}
+                    setEdit={setEdit}
+                    info={{
+                      name: info.type === "file" ? e.file_name : e.folder_name,
+                    }}
+                    infoSecond={info.type}
+                    infoThird={e}
+                    fetchFolder={fetchFolder}
+                    setFileParentName={setFileParentName}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -214,103 +290,40 @@ export function Home() {
   );
 }
 
-function Folders({ edit, setEdit, info, infoSecond,infoThird,fetchFolder}) {
-  let [toggle, setToggle] = useState(false);
-  async function deleteData() {
-
-    const url = `http://localhost:5000/home/delete/${infoSecond === "folder" ? infoThird.folder_id: infoThird.files_id}`;
- 
-    try {
-    console.log(infoSecond);
-      const res = await fetch(url, {
-        method: "DELETE",
-        headers: {
-         "Content-type": "application/json"
-        },
-        body: JSON.stringify({
-         type: infoSecond
-        }),
-        credentials: "include"
-      });
-
-      if (!res.ok) {
-        console.log("error");
-        return;
-      }
-
-      const data = await res.json();
-      console.log(data);
-
-      fetchFolder();
-
- 
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  async function IfFolder(){
-     
-     if(infoSecond === "folder"){
-      fetchFolder("file",infoThird.folder_id);
-      return;
-     }
-
-     if(infoSecond === "file"){
-      console.log("success open file");
-     }
-
-     return;
-  }
-  
+function Error({ message }) {
   return (
-    <div className="flex flex-col items-center border-[2px] border-black w-[110px] h-[100px] relative rounded-sm" >
-      <div
-        className="p-[4px] text-[7px] absolute top-0 right-1 z-30 cursor-pointer focus:outline-none focus:ring-0 hover:bg-transparent hover:text-current"
-        onClick={() => setToggle(!toggle)}
-      >
-        🔴
-        <br />
-        🟡
-        <br />
-        🟢
-      </div>
-      <img
-        src={infoSecond === "file" ? FileIcon : FolderIcon}
-        alt={info.name}
-        className="w-[70px] h-[55px] mt-[17px] mb-[5px]"
-        onClick={IfFolder}
-      />
-      <h2 className="font-bold w-full h-full p-[2px] border-t-[1px] border-black text-center text-[13px] " onClick={IfFolder}>
-        {info.name}
+    <div className="p-[5px] absolute top-[20px] left-1/4 transform -translate-x-1/4 w-[700px] h-[40px] text-[14px] rounded-[10px] mt-[20px] border border-red-500">
+      <h2 className="flex items-start justify-center h-[100%] text-[16px] text-[red]">
+        {message}
       </h2>
-
-      {toggle ? (
-        <div className="flex flex-col text-[13px] font-bold absolute z-20 w-full h-full bg-white justify-between rounded-sm">
-          <span className="p-[6px] w-full border-b-[1px] border-black hover:bg-slate-200 cursor-pointer">
-            📒 Details
-          </span>
-          <span
-            className="p-[6px] w-full border-b-[1px] border-black hover:bg-slate-200 cursor-pointer"
-            onClick={()=>setEdit((infoSecond === "folder" ? {id: infoThird.folder_id, clicked: true, type: infoSecond, name: info.name} : {id: infoThird.files_id, clicked: true,type: infoSecond, name: info.name}))}
-          >
-            🔨 Rename
-          </span>
-          <span className="p-[6px] w-full hover:bg-slate-200 cursor-pointer" onClick={deleteData}>
-            ❌ Delete
-          </span>
-        </div>
-      ) : (
-        <div />
-      )}
     </div>
   );
 }
 
-function Error({message}) {
+function NewFolder({ HandleFolder, setNewFolder }) {
   return (
-    <div className="p-[5px] absolute top-[20px] left-1/4 transform -translate-x-1/4 w-[700px] h-[40px] text-[14px] rounded-[10px] mt-[20px] border border-red-500">
-      <h2 className="flex items-start justify-center h-[100%] text-[16px] text-[red]">{message.error}</h2>
+    <div className="absolute w-[500px] h-[100px] border-[1px] border-black bg-white rounded-[20px] p-[10px]">
+      <form action="" onSubmit={HandleFolder}>
+        <h1 className="mb-[10px] text-[20px] font-bold">Folder Name</h1>
+        <input
+          type="text"
+          name="folderName"
+          className="border-[2px] border-black rounded-[5px] w-[400px] pl-[10px] p-[2px]"
+        />
+        <button
+          className="border-[2px] border-black ml-[10px] rounded-[5px] p-[2px]"
+          type="submit"
+        >
+          {" "}
+          ✅
+        </button>
+        <button
+          className="border-[2px] border-black ml-[10px] rounded-[5px] p-[2px]"
+          onClick={() => setNewFolder(false)}
+        >
+          ❌
+        </button>
+      </form>
     </div>
   );
 }

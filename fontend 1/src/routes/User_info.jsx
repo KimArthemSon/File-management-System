@@ -19,39 +19,38 @@ export default function User_info() {
     if (info.user_type === "personal") {
       data = {
         email: e.target.email.value,
-        first_name:e.target.first_name.value,
-        last_name:e.target.last_name.value,
-        age:e.target.age.value,
-        birthday:e.target.birthday.value,
-        contacts:e.target.contacts.value,
+        first_name: e.target.first_name.value,
+        last_name: e.target.last_name.value,
+        age: e.target.age.value,
+        birthday: e.target.birthday.value,
+        contacts: e.target.contacts.value,
       };
-    
     } else {
       data = {
-        email:e.target.email.value,
-        company_name:e.target.company_name.value,
-        contacts:e.target.contacts.value,
+        email: e.target.email.value,
+        company_name: e.target.company_name.value,
+        contacts: e.target.contacts.value,
       };
     }
 
-  console.log(data);
+    console.log(data);
     try {
       const res = await fetch("http://localhost:5000/user_info/update", {
         method: "PUT",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
-   
+
       if (!res.ok) {
         setError("Failed to fetch data.");
         setLoading(false);
         return;
       }
 
-    console.log((await res.json()).success);
+      console.log((await res.json()).success);
 
       fetchData();
     } catch (e) {
@@ -111,14 +110,13 @@ export default function User_info() {
 
   return (
     <div className="flex flex-row justify-center items-center p-6 bg-gray-100 h-screen">
-      {<Navbar_menu email={info.email}/>}
+      {<Navbar_menu email={info.email} />}
       <div className="flex flex-col items-center mb-auto mr-10 mt-10">
         <img
           src={profileicon}
           className="w-24 h-24 rounded-full shadow-lg"
           alt="profile"
         />
-        
       </div>
 
       <div

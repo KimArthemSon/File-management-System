@@ -7,12 +7,12 @@ export function Register({ togle }) {
     "flex items-center justify-center text-[16px] text-[red] font-bold w-full h-[40px] rounded-[10px] border-[1px] border-[red]";
   const suc =
     "flex items-center justify-center text-[16px] text-[green] font-bold w-full h-[40px] rounded-[10px] border-[1px] border-[rgb(0,220,0)]";
-  
-    function toggle_userType(e) {
+
+  function toggle_userType(e) {
     e.preventDefault();
     setUserType(!userType);
-    }
- 
+  }
+
   async function submit(e) {
     e.preventDefault();
 
@@ -31,7 +31,7 @@ export function Register({ togle }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        credentials: "include"
+        credentials: "include",
       });
 
       const result = await response.json();
